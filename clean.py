@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 import simplejson
 
-def splitScore(df):
+def split_score(df):
     x0 = []
     x1 = []
     x2 = []
@@ -25,13 +25,18 @@ def no_queues(x):
         else:
             0
 
-def split_review1(df):
+def split_review(df):
     df["评论摘要"] = df["评论摘要"].map(lambda x:simplejson.loads(x))
     df["不用排队"] = df["评论摘要"].apply(no_queues)
     df["不用排队"] = df["不用排队"].fillna(value=0)
     df = df.drop(columns=['_id','精选评论','评论摘要','带图评论个数'])
     return df 
 
-df = pd.read_excel('dianping_info(1).xlsx')
-df1 = pd.read_excel('dianping_review.xlsx')
-print(pd.merge(splitScore(df),split_review1(df1)))
+def run():
+    df_info = pd.read_excel('dianping_info(1).xlsx')
+    df_review = pd.read_excel('dianping_review.xlsx')
+    df = pd.merge(split_score(df_info),split_review(df_review))
+    df["口味"] = pd.to_numeric(df["口味"],errors='coerce')
+    df["环境"] = pd.to_numeric(df["环境"],errors='coerce')
+    df["服务"] = pd.to_numeric(df["服务"],errors='coerce')
+    print(df)
