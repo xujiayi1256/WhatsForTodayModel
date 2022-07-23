@@ -66,8 +66,8 @@ def eng_to_chn(df):
                   ,"no_queues":"不用排队"})
 
 def run(path1,path2):
-    df_info = pd.read_excel(os.path.join(os.getcwd(),'raw data',path1))
-    df_review = pd.read_excel(os.path.join(os.getcwd(),'raw data',path2))
+    df_info = pd.read_csv(os.path.join(os.getcwd(),'raw_data',path1))
+    df_review = pd.read_csv(os.path.join(os.getcwd(),'raw_data',path2))
     df = pd.merge(split_dishes(split_score(df_info)),split_review(df_review))
     df = chn_to_eng(df)
     return df
