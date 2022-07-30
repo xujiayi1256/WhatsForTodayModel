@@ -160,6 +160,6 @@ cython_debug/
 .idea/
 .vscode/
 
-#raw_data/
-*.csv
+# raw_data/
+# *.csv
 .DS_Store
