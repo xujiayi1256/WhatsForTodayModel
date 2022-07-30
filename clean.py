@@ -301,4 +301,4 @@ def recommendation(cuisine, district):
     df = df.nlargest(n=3, columns=['nlp_score']).reset_index(drop=True)
     df = df.iloc[:, 1:]
     df["rank"] = df.index + 1
-    return df.to_dict("r")
+    return df.to_dict(orient='records')
