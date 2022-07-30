@@ -32,3 +32,4 @@ fastapi==0.70.1
 matplotlib==3.5.1
 simplejson==3.17.6
 jieba
+uvicorn==0.16.0
