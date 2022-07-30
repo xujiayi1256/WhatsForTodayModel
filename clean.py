@@ -1,9 +1,6 @@
 import os
-import pandas as pd
-import simplejson
-from nlp import nlp_score
-import os
 
+import numpy as np
 import pandas as pd
 import simplejson
 
@@ -88,8 +85,205 @@ def run(path1, path2):
     df = pd.merge(split_score(df_info), split_review(df_review), on="店铺id")
     df = pd.merge(df, nlp_score(df_review), on="店铺id")
     df = df.drop(columns=["推荐菜", "用户总分"])
+    df = classify_cuisine(df)
+    df = classify_area(df)
     df = chn_to_eng(df)
     df["no_queues%"] = df["no_queues"] / df["total_review_number"]
+
+    return df
+
+
+def cuisine_list():
+    detail = []
+    cuisine = []
+    s1 = '牛羊肉火锅|重庆火锅|潮汕牛肉火锅|四川火锅|羊蝎子火锅|串串香|鱼火锅|小火锅|老北京火锅|打边炉/港式火锅|自助火锅|猪肚鸡火锅|\
+    海鲜火锅|本地鸡窝火锅|汤锅|焖锅|炭火锅|云南火锅|日韩火锅|腊排骨火锅|澳门豆捞|泰式火锅|菌菇火锅|芋儿鸡|虾蟹火锅|韩式火锅|黑山羊火锅|火锅'
+    c1 = '火锅'
+    s2 = '融合烤肉|韩式烤肉|拉美烤肉|炙子烤肉|烤肉'
+    c2 = '烤肉'
+    s3 = '日本料理|日式烧烤/烤肉|寿司|日式面条|日式铁板烧|日式自助|日式火锅'
+    c3 = '日本菜'
+    s4 = '比萨|轻食沙拉|意大利菜|牛排|法国菜|西班牙菜|西餐自助|西餐'
+    c4 = '西餐'
+    s5 = '韩国料理'
+    c5 = '韩国料理'
+    s6 = '粤菜馆|茶餐厅|烧腊|潮汕菜|粤式茶点|燕翅鲍|广州菜|顺德菜|客家菜'
+    c6 = '粤菜'
+    s7 = '上海本帮菜|苏浙菜|浙菜|淮扬菜|衢州菜|苏帮菜|南京菜|无锡菜|温州菜'
+    c7 = '本帮江浙菜'
+    s8 = '烤鱼|川菜馆|干锅/香锅|酸菜鱼/水煮鱼'
+    c8 = '川菜'
+    s9 = '泰国菜|越南菜|新加坡菜|印度菜|南洋中菜'
+    c9 = '东南亚菜'
+    s10 = '快餐简餐|小吃|包子|炸鸡炸串|馄饨|抄手|扁食|熟食熏酱|麻辣烫|卤味鸭脖|饺子|西式快餐|米粉|黄焖鸡|粥店|生煎|日式简餐/快餐|锅贴|小笼|桂林米粉|韩式小吃|花甲|烧鸡|美食城'
+    c10 = '小吃快餐'
+    cuisine.append(c1)
+    cuisine.append(c2)
+    cuisine.append(c3)
+    cuisine.append(c4)
+    cuisine.append(c5)
+    cuisine.append(c6)
+    cuisine.append(c7)
+    cuisine.append(c8)
+    cuisine.append(c9)
+    cuisine.append(c10)
+    detail.append(s1)
+    detail.append(s2)
+    detail.append(s3)
+    detail.append(s4)
+    detail.append(s5)
+    detail.append(s6)
+    detail.append(s7)
+    detail.append(s8)
+    detail.append(s9)
+    detail.append(s10)
+    return detail, cuisine
+
+
+def classify_cuisine(df):
+    detail, cuisine = cuisine_list()
+    cp_df = pd.DataFrame({"种类": cuisine, "具体": detail})
+    df['cuisine'] = np.where(df['标签1'].str.contains(cp_df["具体"][0]), cp_df["种类"][0],
+                             np.where(df['标签1'].str.contains(cp_df["具体"][1]), cp_df["种类"][1],
+                                      np.where(df['标签1'].str.contains(cp_df["具体"][2]),
+                                               cp_df["种类"][2],
+                                               np.where(df['标签1'].str.contains(cp_df["具体"][3]),
+                                                        cp_df["种类"][3],
+                                                        np.where(
+                                                            df['标签1'].str.contains(cp_df["具体"][4]),
+                                                            cp_df["种类"][4],
+                                                            np.where(df['标签1'].str.contains(
+                                                                cp_df["具体"][5]), cp_df["种类"][5],
+                                                                     np.where(
+                                                                         df['标签1'].str.contains(
+                                                                             cp_df["具体"][6]),
+                                                                         cp_df["种类"][6],
+                                                                         np.where(
+                                                                             df['标签1'].str.contains(
+                                                                                 cp_df["具体"][7]),
+                                                                             cp_df["种类"][7],
+                                                                             np.where(df[
+                                                                                          '标签1'].str.contains(
+                                                                                 cp_df["具体"][8]),
+                                                                                      cp_df["种类"][
+                                                                                          8],
+                                                                                      np.where(df[
+                                                                                                   '标签1'].str.contains(
+                                                                                          cp_df[
+                                                                                              "具体"][
+                                                                                              9]),
+                                                                                               cp_df[
+                                                                                                   "种类"][
+                                                                                                   9],
+                                                                                               0))))))))))
+    return df
+
+
+def classify_area(df):
+    xzq_ls = []
+    df_xzq = pd.read_excel(os.path.join(os.getcwd(), 'raw_data', '上海热门商区.xlsx'))
+    xzq_l = list(df_xzq['行政区'].unique())
+    for i in xzq_l:
+        test = df_xzq[df_xzq["行政区"] == i]
+        xzq_ls.append("|".join(test["热门商区"]))
+    xzq_df = pd.DataFrame({"行政区": xzq_l, "热门商区": xzq_ls})
+    df['district'] = np.where(df['标签2'].str.contains(xzq_df["热门商区"][0]), xzq_df["行政区"][0],
+                              np.where(df['标签2'].str.contains(xzq_df["热门商区"][1]), xzq_df["行政区"][1],
+                                       np.where(df['标签2'].str.contains(xzq_df["热门商区"][2]),
+                                                xzq_df["行政区"][2],
+                                                np.where(df['标签2'].str.contains(xzq_df["热门商区"][3]),
+                                                         xzq_df["行政区"][3],
+                                                         np.where(df['标签2'].str.contains(
+                                                             xzq_df["热门商区"][4]), xzq_df["行政区"][4],
+                                                                  np.where(df['标签2'].str.contains(
+                                                                      xzq_df["热门商区"][5]),
+                                                                           xzq_df["行政区"][5],
+                                                                           np.where(df[
+                                                                                        '标签2'].str.contains(
+                                                                               xzq_df["热门商区"][6]),
+                                                                                    xzq_df["行政区"][
+                                                                                        6],
+                                                                                    np.where(df[
+                                                                                                 '标签2'].str.contains(
+                                                                                        xzq_df[
+                                                                                            "热门商区"][
+                                                                                            7]),
+                                                                                             xzq_df[
+                                                                                                 "行政区"][
+                                                                                                 7],
+                                                                                             np.where(
+                                                                                                 df[
+                                                                                                     '标签2'].str.contains(
+                                                                                                     xzq_df[
+                                                                                                         "热门商区"][
+                                                                                                         8]),
+                                                                                                 xzq_df[
+                                                                                                     "行政区"][
+                                                                                                     8],
+                                                                                                 np.where(
+                                                                                                     df[
+                                                                                                         '标签2'].str.contains(
+                                                                                                         xzq_df[
+                                                                                                             "热门商区"][
+                                                                                                             9]),
+                                                                                                     xzq_df[
+                                                                                                         "行政区"][
+                                                                                                         9],
+                                                                                                     np.where(
+                                                                                                         df[
+                                                                                                             '标签2'].str.contains(
+                                                                                                             xzq_df[
+                                                                                                                 "热门商区"][
+                                                                                                                 10]),
+                                                                                                         xzq_df[
+                                                                                                             "行政区"][
+                                                                                                             10],
+                                                                                                         np.where(
+                                                                                                             df[
+                                                                                                                 '标签2'].str.contains(
+                                                                                                                 xzq_df[
+                                                                                                                     "热门商区"][
+                                                                                                                     11]),
+                                                                                                             xzq_df[
+                                                                                                                 "行政区"][
+                                                                                                                 11],
+                                                                                                             np.where(
+                                                                                                                 df[
+                                                                                                                     '标签2'].str.contains(
+                                                                                                                     xzq_df[
+                                                                                                                         "热门商区"][
+                                                                                                                         12]),
+                                                                                                                 xzq_df[
+                                                                                                                     "行政区"][
+                                                                                                                     12],
+                                                                                                                 np.where(
+                                                                                                                     df[
+                                                                                                                         '标签2'].str.contains(
+                                                                                                                         xzq_df[
+                                                                                                                             "热门商区"][
+                                                                                                                             13]),
+                                                                                                                     xzq_df[
+                                                                                                                         "行政区"][
+                                                                                                                         13],
+                                                                                                                     np.where(
+                                                                                                                         df[
+                                                                                                                             '标签2'].str.contains(
+                                                                                                                             xzq_df[
+                                                                                                                                 "热门商区"][
+                                                                                                                                 14]),
+                                                                                                                         xzq_df[
+                                                                                                                             "行政区"][
+                                                                                                                             14],
+                                                                                                                         np.where(
+                                                                                                                             df[
+                                                                                                                                 '标签2'].str.contains(
+                                                                                                                                 xzq_df[
+                                                                                                                                     "热门商区"][
+                                                                                                                                     15]),
+                                                                                                                             xzq_df[
+                                                                                                                                 "行政区"][
+                                                                                                                                 15],
+                                                                                                                             0))))))))))))))))
     return df
 
 
@@ -98,11 +292,11 @@ def recommendation(cuisine, district):
     if district == "全部" and cuisine == "全部":
         df = df
     elif district == "全部":
-        df = df[(df.tag1 == cuisine)]
+        df = df[(df.cuisine == cuisine)]
     elif cuisine == "全部":
-        df = df[(df.tag2 == district)]
+        df = df[(df.district == district)]
     else:
-        df = df[(df.tag1 == cuisine) & (df.tag2 == district)]
+        df = df[(df.cuisine == cuisine) & (df.district == district)]
     # df = df[df.nlp_score == df.nlp_score.max()]
     df = df.nlargest(n=3, columns=['nlp_score']).reset_index(drop=True)
     df = df.iloc[:, 1:]
