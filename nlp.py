@@ -11,7 +11,7 @@ from sklearn.metrics import roc_auc_score, f1_score
 def score_trans(score):
     if score > 3:
         return 1
-    elif score < 3:
+    elif score <= 3:
         return 0
     else:
         return None
@@ -50,12 +50,12 @@ def pred_score(model,tv,strings):
     strings_fenci = words_split(pd.Series([strings]))
     return round(float(model.predict_proba(tv.transform(strings_fenci))[:,1]),2)
     
-def nlp_score(path): 
-    df = pd.read_csv(path,encoding='utf-8')
-    df_review = review_clean(df)
+def nlp_score(df): 
+    # df = pd.read_csv(path,encoding='utf-8')
+    df_nlp = review_clean(df)
     
-    df_review['target'] = df_review['用户总分'].map(lambda x:score_trans(x))  
-    df_model = df_review.dropna()
+    df_nlp['target'] = df_nlp['用户总分'].map(lambda x:score_trans(x))  
+    df_model = df_nlp.dropna()
     
     x_train, x_test, y_train, y_test = train_test_split(df_model['评论内容'], df_model['target'], random_state=3, test_size=0.25)
     
@@ -72,17 +72,17 @@ def nlp_score(path):
     classifier = MultinomialNB()
     classifier.fit(tv.transform(x_train2), y_train2)
     
-    df_review['nlp_score'] = df_review['评论内容'].map(lambda x:pred_score(classifier,tv,x))
+    df_nlp['nlp_score'] = df_nlp['评论内容'].map(lambda x:pred_score(classifier,tv,x))
     
     y_pred = classifier.predict_proba(tv.transform(x_test))[:,1]
     print(roc_auc_score(y_test,y_pred))
     
-    # df_review = df_review.groupby(['店铺id'],as_index=False).mean()
-    # df_review = df_review.drop(columns = ['target'])
+    df_nlp = df_nlp.groupby(['店铺id'],as_index=False).mean()
+    df_nlp = df_nlp.drop(columns = ['target'])
     
-    return df_review
+    return df_nlp
 
-    
+   
     
     
     

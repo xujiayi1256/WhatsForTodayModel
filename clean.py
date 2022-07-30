@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import numpy as np
 import simplejson
+from nlp import nlp_score,review_clean,score_trans,pred_score
 
 def split_score(df):
     x0 = []
@@ -15,7 +16,7 @@ def split_score(df):
         x2.append(tmp['服务'])
     test = pd.DataFrame({'口味':x0,'环境':x1, '服务':x2})
     dd1 = pd.concat([df,test],axis=1)
-    dd1 = dd1.drop(['_id','优惠券信息','其他信息','详情链接','图片链接','店铺电话','店铺均分'],axis=1)
+    dd1 = dd1.drop(['_id','优惠券信息','其他信息','详情链接','图片链接','店铺电话','店铺均分','评论总数','推荐菜'],axis=1)
     dd1["口味"] = pd.to_numeric(dd1["口味"],errors='coerce')
     dd1["环境"] = pd.to_numeric(dd1["环境"],errors='coerce')
     dd1["服务"] = pd.to_numeric(dd1["服务"],errors='coerce')
@@ -68,6 +69,28 @@ def eng_to_chn(df):
 def run(path1,path2):
     df_info = pd.read_csv(os.path.join(os.getcwd(),'raw_data',path1))
     df_review = pd.read_csv(os.path.join(os.getcwd(),'raw_data',path2))
-    df = pd.merge(split_dishes(split_score(df_info)),split_review(df_review))
+    # df = pd.merge(split_dishes(split_score(df_info)),split_review(df_review))
+    df = pd.merge(split_score(df_info),split_review(df_review),on="店铺id")
+    df = pd.merge(df,nlp_score(df_review),on="店铺id")
+    df = df.drop(columns=["推荐菜","用户总分"])
     df = chn_to_eng(df)
+    df["no_queues%"] = df["no_queues"]/df["total_review_number"]
     return df
+
+
+
+def recommendation(cuisine, district):
+    df = pd.read_csv("raw_data/cleaned_data.csv")
+    if district == "全部" and cuisine == "全部":
+        df = df
+    elif district == "全部":
+        df = df[(df.tag1==cuisine)]
+    elif cuisine == "全部":
+        df = df[(df.tag2==district)]
+    else:
+        df = df[(df.tag1==cuisine)&(df.tag2==district)]
+    # df = df[df.nlp_score == df.nlp_score.max()]
+    df = df.nlargest(n=3, columns=['nlp_score']).reset_index(drop=True)
+    df = df.iloc[:, 1:]
+    df["rank"] = df.index + 1
+    return df.to_dict("r")
