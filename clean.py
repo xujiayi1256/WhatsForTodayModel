@@ -94,4 +94,6 @@ def recommendation(cuisine, district):
     df = df.nlargest(n=3, columns=['nlp_score']).reset_index(drop=True)
     df = df.iloc[:, 1:]
     df["rank"] = df.index + 1
+    df.fillna(value={"cuisine2": "无"}, inplace=True)
+    df = df.round({'nlp_score': 2})
     return df.to_dict(orient='records')
